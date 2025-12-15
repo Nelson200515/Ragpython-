@@ -1,7 +1,10 @@
 streamlit==1.32.2
+
 langchain==0.2.16
 langchain-openai==0.1.8
 langchain-community==0.2.16
-faiss-cpu==1.8.0
-openai
+
+faiss-cpu==1.8.0.post1
+
+openai>=1.30.0
 tiktoken
