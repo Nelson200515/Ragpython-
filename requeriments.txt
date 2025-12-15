@@ -3,4 +3,8 @@ langchain
 faiss-cpu
 openai
 datetime
+langchain-openai
+langchain-community
+langchain-core
+
 
