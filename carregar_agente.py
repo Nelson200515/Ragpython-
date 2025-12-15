@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
@@ -7,8 +6,8 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.schema import SystemMessage
 
-# Carregar variáveis do arquivo .env
-load_dotenv()
+# Definir a chave OpenAI usando Secrets (Streamlit Cloud)
+os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 def carregar_agente():
     # Vetor de embeddings
@@ -57,3 +56,4 @@ def carregar_agente():
     )
 
     return agent
+
