@@ -1,40 +1,50 @@
 import os
 import streamlit as st
+
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.chains import ConversationalRetrievalChain
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.schema import SystemMessage
 
-# Definir a chave OpenAI usando Secrets (Streamlit Cloud)
+
+# OpenAI Key via Streamlit Secrets
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
+
 def carregar_agente():
-    # Vetor de embeddings
+    # Embeddings
     embeddings = OpenAIEmbeddings()
 
-    # Carregar a base FAISS previamente salva
-    vectorstore = FAISS.load_local(
-        "faiss_store",
-        embeddings,
-        allow_dangerous_deserialization=True
-    )
+    # Caminho da pasta FAISS
+    faiss_path = "faiss_store"
+
+    if os.path.exists(faiss_path):
+        # Se já existir, carrega
+        vectorstore = FAISS.load_local(
+            faiss_path,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
+    else:
+        # Se não existir, gera a partir do PDF
+        loader = PyPDFLoader("pai-rico-pai-pobre-ediao-de-20.pdf")
+        documents = loader.load()
+
+        vectorstore = FAISS.from_documents(documents, embeddings)
+        vectorstore.save_local(faiss_path)
 
     retriever = vectorstore.as_retriever()
 
-    # Mensagem do sistema
-    system_message = SystemMessage(content=(
-        """Você é um assistente virtual especializado em finanças.
-        Responda claramente perguntas técnicas, funcionalidades, garantia, manutenção, atualizações e suporte técnico.
-        Se a pergunta for irrelevante, responda educadamente recusando a pergunta.
-        Se o usuário perguntar quem criou este assistente, responda: 'Este assistente foi desenvolvido por Nelson Luis.'"""
-    ))
-
     # LLM
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = ChatOpenAI(
+        model="gpt-4o",
+        temperature=0
+    )
 
-    # Histórico por sessão
+    # Armazenamento do histórico por sessão
     store = {}
 
     def get_session_history(session_id):
@@ -42,7 +52,7 @@ def carregar_agente():
             store[session_id] = InMemoryChatMessageHistory()
         return store[session_id]
 
-    # Conversational Retrieval Chain
+    # Cadeia de Conversação com Recuperação
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
         retriever=retriever
