@@ -7,8 +7,6 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.chains import ConversationalRetrievalChain
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain.schema import SystemMessage
-
 
 # OpenAI Key via Streamlit Secrets
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
@@ -22,14 +20,12 @@ def carregar_agente():
     faiss_path = "faiss_store"
 
     if os.path.exists(faiss_path):
-        # Se já existir, carrega
         vectorstore = FAISS.load_local(
             faiss_path,
             embeddings,
             allow_dangerous_deserialization=True
         )
     else:
-        # Se não existir, gera a partir do PDF
         loader = PyPDFLoader("pai-rico-pai-pobre-ediao-de-20.pdf")
         documents = loader.load()
 
@@ -44,7 +40,7 @@ def carregar_agente():
         temperature=0
     )
 
-    # Armazenamento do histórico por sessão
+    # Histórico por sessão
     store = {}
 
     def get_session_history(session_id):
@@ -52,13 +48,13 @@ def carregar_agente():
             store[session_id] = InMemoryChatMessageHistory()
         return store[session_id]
 
-    # Cadeia de Conversação com Recuperação
+    # Cadeia RAG
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
         retriever=retriever
     )
 
-    # Agente final com histórico
+    # Agente com histórico
     agent = RunnableWithMessageHistory(
         qa_chain,
         get_session_history,
